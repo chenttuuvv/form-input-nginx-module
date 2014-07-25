@@ -27,7 +27,6 @@ typedef struct {
 
 typedef struct {
     unsigned          done:1;
-    unsigned          waiting_more_body:1;
 } ngx_http_form_input_ctx_t;
 
 
@@ -489,7 +488,6 @@ ngx_http_form_input_handler(ngx_http_request_t *r)
 
     /* set by ngx_pcalloc:
      *      ctx->done = 0;
-     *      ctx->waiting_more_body = 0;
      */
 
     ngx_http_set_ctx(r, ctx, ngx_http_form_input_module);
@@ -508,11 +506,6 @@ ngx_http_form_input_handler(ngx_http_request_t *r)
         return rc;
     }
 
-    if (rc == NGX_AGAIN) {
-        ctx->waiting_more_body = 1;
-
-        return NGX_DONE;
-    }
 
     ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "http form_input has read the request body in one run");
@@ -538,12 +531,6 @@ ngx_http_form_input_post_read(ngx_http_request_t *r)
     r->main->count--;
 #endif
 
-    dd("waiting more body: %d", (int) ctx->waiting_more_body);
 
-    /* waiting_more_body my rewrite phase handler */
-    if (ctx->waiting_more_body) {
-        ctx->waiting_more_body = 0;
-
-        ngx_http_core_run_phases(r);
-    }
+     ngx_http_core_run_phases(r);
 }
